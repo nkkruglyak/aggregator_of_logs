@@ -123,13 +123,42 @@ class Group:
         return res, diff_a_b_values, no_keys_in_a, no_keys_in_b, eq_a_b_values
 
 
-class LogReaderAndFilter:
-
+class ReaderAndFilter:
+    # ToDO: remove it
+    common_schemas_dir = "schemas/"
     # conditions []Condition
     # set_of_fields SetOfFields
-    def __init__(self, conditions, set_of_fields):
-        self.conditions = conditions
-        self.set_of_fields = set_of_fields
+    # def __init__(self, conditions, set_of_fields):
+    #     self.conditions = conditions
+    #     self.set_of_fields = set_of_fields
+
+    def __init__(self,
+                 schema_file='', fields_for_schema=[],
+                 simple_conditions=[], selected_fields=[]):
+
+        if schema_file:
+            schema_file = self.common_schemas_dir + schema_file
+            self.schema = Schema(file_name=schema_file)
+        elif fields_for_schema:
+            self.schema = Schema(fields_for_schema=fields_for_schema)
+        else:
+            print("ERROR: for define Data need data to define schema")
+
+        if simple_conditions:
+            self.conditions = [
+                Condition(
+                    self.schema.index_by_name[simple_condition[2]],
+                    simple_condition[0],
+                    simple_condition[1],
+                    simple_condition[2]
+                ) for simple_condition in simple_conditions]
+        else:
+            self.conditions = []
+
+        if selected_fields:
+            self.set_of_fields = self.schema.get_set_of_fields_by_names(selected_fields)
+        else:
+            self.set_of_fields = self.schema.get_set_of_fields_by_names(self.schema.get_all_names())
 
     def satisfy_conditions(self, log):
         return all([condition.satisfy(log) for condition in self.conditions])
@@ -193,46 +222,27 @@ class Schema:
 
 class Data:
     common_logs_dir = "logs/"
-    common_schemas_dir = "schemas/"
     # simple_conditions [(func, params, name_field)]
-    # names_of_fields_for_set [field_name, ..]
+    # selected_fields [field_name, ..]
     # names_of_fields_for_group [field_name, ..]
-    def __init__(self, logs_dir='',logs=[], schema_file='',fields_for_schema=[], simple_conditions=[], names_of_fields_for_set=[],  names_of_fields_for_group=[]):
+
+    def __init__(self, logs_dir='', logs=[], schema_file='',
+                 fields_for_schema=[], simple_conditions=[],
+                 selected_fields=[],  names_of_fields_for_group=[]):
+        raf = ReaderAndFilter(schema_file, fields_for_schema, simple_conditions, selected_fields)
+
+        self.set_of_fields = raf.set_of_fields
+
         if logs_dir:
             self.logs_dir = self.common_logs_dir + logs_dir
-        
-        if schema_file:
-            self.schema_file = self.common_schemas_dir + schema_file
-            self.schema = Schema(file_name=self.schema_file)
-        elif fields_for_schema:
-            self.schema = Schema(fields_for_schema=fields_for_schema)
-        else:
-            print("ERROR: for define Data need data to define schema")
 
-        if simple_conditions:
-            self.conditions = [
-                Condition(
-                    self.schema.index_by_name[simple_condition[2]], 
-                    simple_condition[0],
-                    simple_condition[1],
-                    simple_condition[2]
-                ) for simple_condition in simple_conditions]
-        else:
-            self.conditions = []
-
-        if names_of_fields_for_set:
-            self.set_of_fields = self.schema.get_set_of_fields_by_names(names_of_fields_for_set)
-        else:
-            self.set_of_fields = self.schema.get_set_of_fields_by_names(self.schema.get_all_names())
-
-        # после выжимки схема меняется!
         if names_of_fields_for_group:
             self.ind_of_fields_for_group = self.set_of_fields.get_indexes_by_names(names_of_fields_for_group)
         else:
             self.ind_of_fields_for_group = []
 
     def create_filter(self):
-        self.filter = LogReaderAndFilter(self.conditions, self.set_of_fields)
+        self.filter = ReaderAndFilter(self.conditions, self.set_of_fields)
 
     def apply_filter_to_dir(self):
         self.filtred_logs = self.filter.apply_filter_to_dir(self.logs_dir)

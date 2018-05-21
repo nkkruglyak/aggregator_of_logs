@@ -75,10 +75,47 @@ class TestFixture:
     set_1 = SetOfFields([("first_field", 1), ("second_field", 2)])
     set_2 = SetOfFields([("second_field", 2), ("first_field", 1)])
 
-    filter_1 = LogReaderAndFilter([cond_1, cond_2], set_1)
-    filter_2 = LogReaderAndFilter([cond_1, cond_3], set_1)
-    filter_3 = LogReaderAndFilter([cond_2, cond_4], set_1)
-    filter_4 = LogReaderAndFilter([cond_4, cond_3], set_1)
+    schema = ["first_field", "second_field", "third_field", "fourth_field", "fifth_field", "six_field"]
+
+    # cond_1, cond_2
+    filter_1 = ReaderAndFilter(
+        fields_for_schema=schema,
+        simple_conditions=[
+            (be_in, in_values, "first_field"),
+            (be_in, in_values, "second_field"),
+        ],
+        selected_fields=["first_field", "second_field"]
+    )
+
+    # cond_1, cond_3
+    filter_2 = ReaderAndFilter(
+        fields_for_schema=schema,
+        simple_conditions=[
+            (be_in, in_values, "first_field"),
+            (be_equal, eq_value, "third_field"),
+        ],
+        selected_fields=["first_field", "second_field"]
+    )
+
+    # cond_2, cond_4
+    filter_3 = ReaderAndFilter(
+        fields_for_schema=schema,
+        simple_conditions=[
+            (be_in, in_values, "second_field"),
+            (be_equal, no_eq_value, "fourth_field")
+        ],
+        selected_fields=["first_field", "second_field"]
+    )
+
+    # cond_3, cond_4
+    filter_4 = ReaderAndFilter(
+        fields_for_schema=schema,
+        simple_conditions=[
+            (be_equal, no_eq_value, "fourth_field"),
+            (be_equal, eq_value, "third_field"),
+        ],
+        selected_fields=["first_field", "second_field"]
+    )
 
     cond_1_to_logs_1 = [["i", "like", "my", "code",  "very", "mush"]]
 
@@ -164,7 +201,7 @@ class TestSetOfFields(unittest.TestCase, TestFixture):
         )
 
 
-class TestLogReaderAndFilter(unittest.TestCase, TestFixture):
+class TestReaderAndFilter(unittest.TestCase, TestFixture):
     def test_satisfy_conditions(self):
         # 1 && 0
         self.assertEqual(
@@ -440,7 +477,7 @@ class TestAllLogicOnMyTimesheet(unittest.TestCase):
                 (lambda x, y: x>=y, "2017-11", "date"),
                 (lambda x, y: x<=y, "2017-12", "date"),
             ],
-            names_of_fields_for_set=["date", "start_time", "end_time", "number_of_ticket"],
+            selected_fields=["date", "start_time", "end_time", "number_of_ticket"],
             names_of_fields_for_group=["number_of_ticket"]
         )
         data.create_filter()
@@ -458,7 +495,7 @@ class TestAllLogicOnMyTimesheet(unittest.TestCase):
                 (lambda x, y: x>=y, "2017-11", "date"),
                 (lambda x, y: x<=y, "2017-12", "date"),
             ],
-            names_of_fields_for_set=["date", "start_time", "end_time", "number_of_ticket"],
+            selected_fields=["date", "start_time", "end_time", "number_of_ticket"],
             names_of_fields_for_group=["number_of_ticket"]
         )
         data.create_filter()
