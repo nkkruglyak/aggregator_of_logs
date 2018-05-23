@@ -126,11 +126,6 @@ class Group:
 class ReaderAndFilter:
     # ToDO: remove it
     common_schemas_dir = "schemas/"
-    # conditions []Condition
-    # set_of_fields SetOfFields
-    # def __init__(self, conditions, set_of_fields):
-    #     self.conditions = conditions
-    #     self.set_of_fields = set_of_fields
 
     def __init__(self,
                  schema_file='', fields_for_schema=[],
@@ -241,8 +236,12 @@ class Data:
         else:
             self.ind_of_fields_for_group = []
 
+        # ToDo: remove me to not broken all now
+        self.filter = raf
+
+    # ToDo: remove me
     def create_filter(self):
-        self.filter = ReaderAndFilter(self.conditions, self.set_of_fields)
+        pass
 
     def apply_filter_to_dir(self):
         self.filtred_logs = self.filter.apply_filter_to_dir(self.logs_dir)

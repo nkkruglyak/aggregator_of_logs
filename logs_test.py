@@ -72,8 +72,8 @@ class TestFixture:
     cond_3 = Condition(3, be_equal, eq_value)
     cond_4 = Condition(3, be_equal, no_eq_value)
 
-    set_1 = SetOfFields([("first_field", 1), ("second_field", 2)])
-    set_2 = SetOfFields([("second_field", 2), ("first_field", 1)])
+    set_1 = SetOfFields([("second_field", 1), ("third_field", 2)])
+    set_2 = SetOfFields([("third_field", 2), ("second_field", 1)])
 
     schema = ["first_field", "second_field", "third_field", "fourth_field", "fifth_field", "six_field"]
 
@@ -84,7 +84,7 @@ class TestFixture:
             (be_in, in_values, "first_field"),
             (be_in, in_values, "second_field"),
         ],
-        selected_fields=["first_field", "second_field"]
+        selected_fields=["second_field", "third_field"]
     )
 
     # cond_1, cond_3
@@ -92,9 +92,9 @@ class TestFixture:
         fields_for_schema=schema,
         simple_conditions=[
             (be_in, in_values, "first_field"),
-            (be_equal, eq_value, "third_field"),
+            (be_equal, eq_value, "fourth_field"),
         ],
-        selected_fields=["first_field", "second_field"]
+        selected_fields=["second_field", "third_field"]
     )
 
     # cond_2, cond_4
@@ -104,7 +104,7 @@ class TestFixture:
             (be_in, in_values, "second_field"),
             (be_equal, no_eq_value, "fourth_field")
         ],
-        selected_fields=["first_field", "second_field"]
+        selected_fields=["second_field", "third_field"]
     )
 
     # cond_3, cond_4
@@ -112,9 +112,9 @@ class TestFixture:
         fields_for_schema=schema,
         simple_conditions=[
             (be_equal, no_eq_value, "fourth_field"),
-            (be_equal, eq_value, "third_field"),
+            (be_equal, eq_value, "fourth_field"),
         ],
-        selected_fields=["first_field", "second_field"]
+        selected_fields=["second_field", "third_field"]
     )
 
     cond_1_to_logs_1 = [["i", "like", "my", "code",  "very", "mush"]]
@@ -297,7 +297,6 @@ class TestReaderAndFilter(unittest.TestCase, TestFixture):
             self.filter_3.apply_all(self.logs_1),
             []
         )
-
 
 class TestSchema(unittest.TestCase):
     def test_ssp_schema(self):

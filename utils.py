@@ -81,3 +81,9 @@ def sum_of_time(logs, time_inds):
     return sum(time_durations) // 60
 
 
+def sum_values(d):
+    sum_d = 0
+    for k,v in d.items():
+        sum_d += v
+    return sum_d
+
