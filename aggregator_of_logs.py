@@ -45,36 +45,40 @@ class SetOfFields:
         return self.names.index(name)
 
 
-class Group:
-    def __init__(self, indexes, logs):
-        self.indexes = indexes
-        if indexes:
-            # possible values of key to different group
-            self.values = list(
-                set(
-                    [tuple([log[i] for i in indexes]) for log in logs]
-                )
+class GroupedData:
+    # def __init__(self, indexes, logs, func, params=[]):
+    def __init__(self, data, func='', params=[]):
+
+        indexes = data.ind_of_fields_for_group
+        logs = data.filtred_logs
+
+        # possible values of key to different group
+        self.values = list(
+            set(
+                [tuple([log[i] for i in indexes]) for log in logs]
             )
+        )
 
-            groups_as_dict = dict()
+        groups_as_dict = dict()
 
-            for value in self.values:
-                group_of_logs = [
-                    log for log in logs 
-                    if all([log[ind] == value_el for ind, value_el in zip(self.indexes, value)])
-                ]
-                groups_as_dict[value] = group_of_logs
-            
-            self.groups_as_dict = groups_as_dict
-        
-        else:
-            self.indexes = []
-            self.values = []
-            self.groups_as_dict = dict()
+        for value in self.values:
+            group_of_logs = [
+                log for log in logs
+                if all([log[ind] == value_el for ind, value_el in zip(indexes, value)])
+            ]
+            groups_as_dict[value] = group_of_logs
+
+        self.groups = groups_as_dict
+
+        # apply fun for groups
+        if func:
+            self.apply_func(func, params)
 
     def apply_func(self, func, params=[]):
-        self.func_value_by_group_key = {k: func(v, params) for (k, v) in self.groups_as_dict.items()}
-        return self.func_value_by_group_key
+        self.func_value_by_group_key = {
+            k: func(v, params)
+            for (k, v) in self.groups.items()
+        }
         
     def reverse_func_value_by_keys(self):
         self.groups_key_by_func_value = {
@@ -87,7 +91,7 @@ class Group:
         if not self.groups_key_by_func_value:
             self.reverse_func_value_by_keys()
         self.logs_by_func_value = {
-            func_value: [self.groups_as_dict[k] for k in  list_of_key] 
+            func_value: [self.groups[k] for k in  list_of_key]
             for func_value,list_of_key in self.groups_key_by_func_value
         }
         return self.logs_by_func_value
@@ -95,9 +99,10 @@ class Group:
     def get_logs_by_list_in_groups_with_keys(self, list_of_keys):
         collected_logs = []
         for k in list_of_keys:
-            collected_logs.extend(self.groups_as_dict[k])
+            collected_logs.extend(self.groups[k])
         return collected_logs
  
+    # ToDo: вынести за пределы класса
     def func_values_are(self, func_values, descr_a='a', descr_b='b', func_for_compare='', dump_all=False, prefix=''):
         if not func_for_compare:
             func_for_compare = lambda a, b=0: a - b
@@ -213,7 +218,8 @@ class Schema:
 
 
 class Data:
-    def __init__(self, raf, logs_dir='', logs=[], names_of_fields_for_group=[]):
+    def __init__(self, raf, logs_dir='', logs=[],
+                 names_of_fields_for_group=[]):
 
         self.set_of_fields = raf.set_of_fields
 
@@ -229,13 +235,13 @@ class Data:
         elif logs:
             self.filtred_logs = raf.apply_all(logs)
     
-    def create_groups(self, func, params=[]):
-        if not self.filtred_logs:
-            print("ERROR: there is no filtred_logs")
-
-        self.group = Group(self.ind_of_fields_for_group, self.filtred_logs)
-        self.group.apply_func(func, params=params)
-        return self.group
+    # def create_groups(self, func, params=[]):
+    #     if not self.filtred_logs:
+    #         print("ERROR: there is no filtred_logs")
+    #
+    #     self.group = Group(self.ind_of_fields_for_group, self.filtred_logs)
+    #     self.group.apply_func(func, params=params)
+    #     return self.group
 
     def recreate_groups(self, func, names_of_fields_for_group=[], params=[]):
         if names_of_fields_for_group:
@@ -257,7 +263,7 @@ class Data:
         bad_logs = []
 
         for k in interested_keys:
-            logs_in_group = self.group.groups_as_dict[k]
+            logs_in_group = self.group.groups[k]
             func_results_by_group = all([f(logs_in_group) for f in condition_on_logs_in_group])
             if func_results_by_group:
                 good_logs.extend(logs_in_group)
