@@ -468,37 +468,36 @@ class TestGroup(unittest.TestCase, TestFixture):
 
 
 class TestAllLogicOnMyTimesheet(unittest.TestCase):
+    reader_and_filter = ReaderAndFilter(
+        schema_file="schemas/timesheet",
+        simple_conditions=[
+            (lambda x, y: x >= y, "2017-11", "date"),
+            (lambda x, y: x <= y, "2017-12", "date"),
+        ],
+        selected_fields=["date", "start_time", "end_time", "number_of_ticket"],
+    )
+
     def test_count_of_ticket_in_work_from_october(self):
+
         data = Data(
-            logs_dir="timesheet/nkruglyak",
-            schema_file="timesheet",
-            simple_conditions=[
-                (lambda x, y: x>=y, "2017-11", "date"),
-                (lambda x, y: x<=y, "2017-12", "date"),
-            ],
-            selected_fields=["date", "start_time", "end_time", "number_of_ticket"],
+            logs_dir="logs/timesheet/nkruglyak",
+            raf=self.reader_and_filter,
             names_of_fields_for_group=["number_of_ticket"]
         )
-        data.create_filter()
-        data.apply_filter_to_dir()
+
         grouped_data_1 = data.create_groups(count_in_group)
         n = len(grouped_data_1.groups_as_dict.keys())
         self.assertEqual(n, 32)
 
 
     def test_maximum_days_in_work(self):
+
         data = Data(
-            logs_dir="timesheet/nkruglyak",
-            schema_file="timesheet",
-            simple_conditions=[
-                (lambda x, y: x>=y, "2017-11", "date"),
-                (lambda x, y: x<=y, "2017-12", "date"),
-            ],
-            selected_fields=["date", "start_time", "end_time", "number_of_ticket"],
+            logs_dir="logs/timesheet/nkruglyak",
+            raf=self.reader_and_filter,
             names_of_fields_for_group=["number_of_ticket"]
         )
-        data.create_filter()
-        data.apply_filter_to_dir()
+
         # максимальное время потраченное на задачу в октябре
 
         start_time_ind = data.set_of_fields.get_index_by_name("start_time")
@@ -522,4 +521,3 @@ class TestAllLogicOnMyTimesheet(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-    # main()

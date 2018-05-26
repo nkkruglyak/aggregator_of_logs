@@ -124,15 +124,12 @@ class Group:
 
 
 class ReaderAndFilter:
-    # ToDO: remove it
-    common_schemas_dir = "schemas/"
 
     def __init__(self,
                  schema_file='', fields_for_schema=[],
                  simple_conditions=[], selected_fields=[]):
 
         if schema_file:
-            schema_file = self.common_schemas_dir + schema_file
             self.schema = Schema(file_name=schema_file)
         elif fields_for_schema:
             self.schema = Schema(fields_for_schema=fields_for_schema)
@@ -216,38 +213,21 @@ class Schema:
 
 
 class Data:
-    common_logs_dir = "logs/"
-    # simple_conditions [(func, params, name_field)]
-    # selected_fields [field_name, ..]
-    # names_of_fields_for_group [field_name, ..]
-
-    def __init__(self, logs_dir='', logs=[], schema_file='',
-                 fields_for_schema=[], simple_conditions=[],
-                 selected_fields=[],  names_of_fields_for_group=[]):
-        raf = ReaderAndFilter(schema_file, fields_for_schema, simple_conditions, selected_fields)
+    def __init__(self, raf, logs_dir='', logs=[], names_of_fields_for_group=[]):
 
         self.set_of_fields = raf.set_of_fields
 
-        if logs_dir:
-            self.logs_dir = self.common_logs_dir + logs_dir
-
         if names_of_fields_for_group:
-            self.ind_of_fields_for_group = self.set_of_fields.get_indexes_by_names(names_of_fields_for_group)
+            self.ind_of_fields_for_group = \
+                self.set_of_fields.get_indexes_by_names(names_of_fields_for_group)
         else:
             self.ind_of_fields_for_group = []
 
-        # ToDo: remove me to not broken all now
-        self.filter = raf
-
-    # ToDo: remove me
-    def create_filter(self):
-        pass
-
-    def apply_filter_to_dir(self):
-        self.filtred_logs = self.filter.apply_filter_to_dir(self.logs_dir)
-
-    def apply_filter_to_logs(self, logs):
-        self.filtred_logs = self.filter.apply_all(logs)
+        # apply filter
+        if logs_dir:
+            self.filtred_logs = raf.apply_filter_to_dir(logs_dir)
+        elif logs:
+            self.filtred_logs = raf.apply_all(logs)
     
     def create_groups(self, func, params=[]):
         if not self.filtred_logs:
