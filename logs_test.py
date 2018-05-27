@@ -388,7 +388,7 @@ class TestGroup(unittest.TestCase, TestFixture):
         for key, value in self.grouped_log_1.items():
             self.assertEqual(value, 1)
 
-    def test_func_values_are(self):
+    def test_func_values_compare(self):
         group_1_are_1 = {
                 ("i", "dislike"): 1,
                 ("i", "like"): 1,
@@ -416,7 +416,9 @@ class TestGroup(unittest.TestCase, TestFixture):
                 ("sister", ""): 2,
         }
 
-        group_1_is_eq_1, group_1_diff_1, no_in_gr_1, no_in_gr_1_are_1, eq_group_1_1 = self.grouped_data_1.func_values_are(group_1_are_1)
+        group_1_is_eq_1, group_1_diff_1, no_in_gr_1, no_in_gr_1_are_1, eq_group_1_1 = \
+            func_values_compare(self.grouped_data_1.func_value_by_group_key,
+                                group_1_are_1)
 
         self.assertEqual(group_1_is_eq_1, True)
         self.assertEqual(len(group_1_diff_1), 0)
@@ -424,7 +426,9 @@ class TestGroup(unittest.TestCase, TestFixture):
         self.assertEqual(len(no_in_gr_1_are_1), 0)
         self.assertDictEqual(eq_group_1_1, group_1_are_1)
 
-        group_1_is_eq_2, group_1_diff_2, no_in_gr_1, no_in_gr_1_are_2, eq_group_1_2 = self.grouped_data_1.func_values_are(group_1_are_2)
+        group_1_is_eq_2, group_1_diff_2, no_in_gr_1, no_in_gr_1_are_2, eq_group_1_2 = \
+            func_values_compare(self.grouped_data_1.func_value_by_group_key,
+                                 group_1_are_2)
 
         self.assertEqual(group_1_is_eq_2, False)
         self.assertEqual(len(group_1_diff_2),0 )
@@ -438,8 +442,9 @@ class TestGroup(unittest.TestCase, TestFixture):
         )
         self.assertDictEqual(eq_group_1_2, group_1_are_2)
 
-
-        group_1_is_eq_3, group_1_diff_3, no_in_gr_1, no_in_gr_1_are_3, eq_group_1_3 = self.grouped_data_1.func_values_are(group_1_are_3)
+        group_1_is_eq_3, group_1_diff_3, no_in_gr_1, no_in_gr_1_are_3, eq_group_1_3 = \
+            func_values_compare(self.grouped_data_1.func_value_by_group_key,
+                                group_1_are_3)
 
         self.assertEqual(group_1_is_eq_3, False)
         self.assertEqual(len(group_1_diff_3),0)
@@ -452,7 +457,9 @@ class TestGroup(unittest.TestCase, TestFixture):
         self.assertEqual(len(no_in_gr_1_are_3), 0)
         self.assertDictEqual(eq_group_1_3, group_1_are_1)
 
-        group_1_is_eq_4, group_1_diff_4, no_in_gr_1, no_in_gr_1_are_4, eq_group_1_4 = self.grouped_data_1.func_values_are(group_1_are_4)
+        group_1_is_eq_4, group_1_diff_4, no_in_gr_1, no_in_gr_1_are_4, eq_group_1_4 = \
+            func_values_compare(self.grouped_data_1.func_value_by_group_key,
+                                group_1_are_4)
         self.assertEqual(group_1_is_eq_4, False)
         self.assertDictEqual(
             group_1_diff_4,
@@ -484,7 +491,10 @@ class TestGroup(unittest.TestCase, TestFixture):
     #             ("mum", "likes") : -3,
     #             ("sister", ""): 2,
     #     }
-    #     group_1_is_eq_4, group_1_diff_4, no_in_gr_1, no_in_gr_1_are_4, eq_group_1_4 = self.grouped_data_1.func_values_are(group_1_are_4)
+    #     group_1_is_eq_4, group_1_diff_4, no_in_gr_1, no_in_gr_1_are_4, eq_group_1_4 =
+        # func_values_compare(
+        # self.grouped_data_1.func_value_by_group_key,
+        # group_1_are_4)
     #     dump_dict_to_file(group_1_diff_4, 'test_group_1_diff_4.txt')
     #     # dump_dict_to_file(no_in_gr_1_are_4, 'test_no_in_gr_1_are_4.txt')
     #     # dump_dict_to_file(eq_group_1_4, 'test_eq_group_1_4.txt')

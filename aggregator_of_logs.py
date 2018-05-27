@@ -3,14 +3,16 @@ import csv
 import os
 from utils import *
 
+
 be_in = lambda x, array: x in array
 be_not_in = lambda x, array: not x in array
-be_equal = lambda x,y: x == y
-be_not_equal = lambda x,y: x != y
+be_equal = lambda x, y: x == y
+be_not_equal = lambda x, y: x != y
 count_in_group = lambda x, params: len(x)
 is_not_empty = lambda x, params: bool(x)
 has_more_then_one = lambda x, params: len(x) > 1
 ed = lambda x: x
+
 
 class Condition:
     def __init__(self, index, func, params=[], description=""):
@@ -46,7 +48,6 @@ class SetOfFields:
 
 
 class GroupedData:
-    # def __init__(self, indexes, logs, func, params=[]):
     def __init__(self, data, func='', params=[]):
 
         indexes = data.ind_of_fields_for_group
@@ -70,7 +71,6 @@ class GroupedData:
 
         self.groups = groups_as_dict
 
-        # apply fun for groups
         if func:
             self.apply_func(func, params)
 
@@ -85,14 +85,14 @@ class GroupedData:
             v: [k for k in self.func_value_by_group_key.keys() if self.func_value_by_group_key[k] == v]
             for v in self.func_value_by_group_key.values()
         }
-        return self.groups_key_by_func_value
 
     def get_logs_by_func_value(self):
         if not self.groups_key_by_func_value:
             self.reverse_func_value_by_keys()
+
         self.logs_by_func_value = {
-            func_value: [self.groups[k] for k in  list_of_key]
-            for func_value,list_of_key in self.groups_key_by_func_value
+            func_value: [self.groups[k] for k in list_of_key]
+            for func_value, list_of_key in self.groups_key_by_func_value
         }
         return self.logs_by_func_value
 
@@ -101,31 +101,28 @@ class GroupedData:
         for k in list_of_keys:
             collected_logs.extend(self.groups[k])
         return collected_logs
- 
-    # ToDo: вынести за пределы класса
-    def func_values_are(self, func_values, descr_a='a', descr_b='b', func_for_compare='', dump_all=False, prefix=''):
-        if not func_for_compare:
-            func_for_compare = lambda a, b=0: a - b
 
-        if not self.func_value_by_group_key:
-            print("ERROR: no apply func to groups")
+    # ToDO: test it
+    def filtred_logs_by_func_value_on_group(self,
+                                            func_for_interested_value, func_for_bad_value,
+                                            condition_on_logs_in_group):
 
-        no_keys_in_b, diff_a_b_values, eq_a_b_values = compare_dicts(self.func_value_by_group_key, func_values, func_for_compare)
-        no_keys_in_a, diff_b_a_values, eq_b_a_values = compare_dicts(func_values, self.func_value_by_group_key, func_for_compare)
+        bad_keys = [k for k,v in self.func_value_by_group_key.items() if func_for_bad_value(v)]
+        if bad_keys:
+            print("There are func_for_bad_value!")
 
-        if len(diff_a_b_values) != len(diff_b_a_values):
-            print("something is broken")
-            res = False
+        interested_keys = [k for k,v in self.func_value_by_group_key.items() if func_for_interested_value(v)]
+        good_logs = []
+        bad_logs = []
 
-        elif not (no_keys_in_b or no_keys_in_a or diff_a_b_values):
-            res = True
-
-        else:
-            res = False
-
-        print_description(res, diff_a_b_values, no_keys_in_a, no_keys_in_b, eq_a_b_values, descr_a, descr_b, dump_all=dump_all, prefix=prefix)
-
-        return res, diff_a_b_values, no_keys_in_a, no_keys_in_b, eq_a_b_values
+        for k in interested_keys:
+            logs_in_group = self.groups[k]
+            func_results_by_group = all([f(logs_in_group) for f in condition_on_logs_in_group])
+            if func_results_by_group:
+                good_logs.extend(logs_in_group)
+            else:
+                bad_logs.extend(logs_in_group)
+        return good_logs, bad_logs
 
 
 class ReaderAndFilter:
@@ -234,14 +231,6 @@ class Data:
             self.filtred_logs = raf.apply_filter_to_dir(logs_dir)
         elif logs:
             self.filtred_logs = raf.apply_all(logs)
-    
-    # def create_groups(self, func, params=[]):
-    #     if not self.filtred_logs:
-    #         print("ERROR: there is no filtred_logs")
-    #
-    #     self.group = Group(self.ind_of_fields_for_group, self.filtred_logs)
-    #     self.group.apply_func(func, params=params)
-    #     return self.group
 
     def recreate_groups(self, func, names_of_fields_for_group=[], params=[]):
         if names_of_fields_for_group:
@@ -250,26 +239,42 @@ class Data:
             self.ind_of_fields_for_group = []
         return self.create_groups(func, params)
 
-    def filtred_logs_by_func_value_on_group(self, func_for_interested_value, func_for_bad_value, condition_on_logs_in_group):
-        if not (self.group and self.group.func_value_by_group_key):
-            print("ERROR! you do not create group yet!")
-            return
-        bad_keys = [ k for k,v in self.group.func_value_by_group_key.items() if func_for_bad_value(v)]
-        if bad_keys:
-            print("There are func_for_bad_value!")
 
-        interested_keys = [ k for k,v in self.group.func_value_by_group_key.items() if func_for_interested_value(v)]
-        good_logs = []
-        bad_logs = []
+# ToDo: вынести за пределы класса
+def func_values_compare(func_values_a, func_values_b,
+                        descr_a='a', descr_b='b',
+                        func_for_compare='', dump_all=False, prefix=''):
+    if not func_for_compare:
+        func_for_compare = lambda a, b=0: a - b
 
-        for k in interested_keys:
-            logs_in_group = self.group.groups[k]
-            func_results_by_group = all([f(logs_in_group) for f in condition_on_logs_in_group])
-            if func_results_by_group:
-                good_logs.extend(logs_in_group)
-            else:
-                bad_logs.extend(logs_in_group)
-        return good_logs, bad_logs
+    if not func_values_a or not func_values_b:
+        print("ERROR: Can not compare with empty func_values_a")
+        return
+
+    no_keys_in_b, diff_a_b_values, eq_a_b_values = compare_dicts(func_values_a,
+                                                                 func_values_b,
+                                                                 func_for_compare)
+
+    no_keys_in_a, diff_b_a_values, eq_b_a_values = compare_dicts(func_values_b,
+                                                                 func_values_a,
+                                                                 func_for_compare)
+
+    if len(diff_a_b_values) != len(diff_b_a_values):
+        print("something is broken")
+        res = False
+
+    elif not (no_keys_in_b or no_keys_in_a or diff_a_b_values):
+        res = True
+
+    else:
+        res = False
+
+    print_description(res, diff_a_b_values,
+                      no_keys_in_a, no_keys_in_b, eq_a_b_values,
+                      descr_a, descr_b,
+                      dump_all=dump_all, prefix=prefix)
+
+    return res, diff_a_b_values, no_keys_in_a, no_keys_in_b, eq_a_b_values
 
 
 def main():
