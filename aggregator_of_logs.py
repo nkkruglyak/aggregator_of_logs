@@ -3,7 +3,6 @@ import csv
 import os
 from utils import *
 
-
 be_in = lambda x, array: x in array
 be_not_in = lambda x, array: not x in array
 be_equal = lambda x, y: x == y
@@ -48,9 +47,9 @@ class SetOfFields:
 
 
 class GroupedData:
-    def __init__(self, data, func='', params=[]):
+    def __init__(self, data, fields_for_group, func='', params=[]):
 
-        indexes = data.ind_of_fields_for_group
+        indexes = data.set_of_fields.get_indexes_by_names(fields_for_group)
         logs = data.filtred_logs
 
         # possible values of key to different group
@@ -107,11 +106,15 @@ class GroupedData:
                                             func_for_interested_value, func_for_bad_value,
                                             condition_on_logs_in_group):
 
-        bad_keys = [k for k,v in self.func_value_by_group_key.items() if func_for_bad_value(v)]
+        bad_keys = [k for k, v in self.func_value_by_group_key.items() if func_for_bad_value(v)]
+
+        # remove it ? если предпологается такое использование,
+        # то bad_keys должен быть возврщаемым значением ?
         if bad_keys:
             print("There are func_for_bad_value!")
 
-        interested_keys = [k for k,v in self.func_value_by_group_key.items() if func_for_interested_value(v)]
+        interested_keys = [k for k, v in self.func_value_by_group_key.items()
+                           if func_for_interested_value(v)]
         good_logs = []
         bad_logs = []
 
@@ -136,7 +139,7 @@ class ReaderAndFilter:
         elif fields_for_schema:
             self.schema = Schema(fields_for_schema=fields_for_schema)
         else:
-            print("ERROR: for define Data need data to define schema")
+            logging.error("for define Data need data to define schema")
 
         if simple_conditions:
             self.conditions = [
@@ -176,17 +179,24 @@ class ReaderAndFilter:
             filtred_logs = self.apply_all(reader)
         return filtred_logs
 
+    def apply_filter_to_file(self, file):
+        fresh_logs = self.read_and_filter(file)
+        logging.info("apply filter to file {} {}".format(file, len(fresh_logs)))
+        return fresh_logs
+
     def apply_filter_to_dir(self, dir_path):
-        print("apply_filter_to_dir", dir_path)
         files_logs = os.listdir(dir_path)
         interested_logs = []
         for file_name in files_logs:
-            file_path = dir_path + "/" + file_name
-            fresh_logs = self.read_and_filter(file_path)
-            # print(file_name, len(fresh_logs))
+            fresh_logs = self.apply_filter_to_file(dir_path + "/" + file_name)
             interested_logs.extend(fresh_logs)
-            # FIXME we have very much logs and ssp_data_many_adslot works very slowly for all
-            # break
+        return interested_logs
+
+    def apply_filter_to_files(self, files):
+        interested_logs = []
+        for file_name in files:
+            fresh_logs = self.apply_filter_to_file(file_name)
+            interested_logs.extend(fresh_logs)
         return interested_logs
 
 
@@ -199,7 +209,7 @@ class Schema:
         elif fields_for_schema:
             self.fields = [(f, j) for j, f in enumerate(fields_for_schema)]
         else:
-            print("ERROR: for definition Schema need file_name or fields_for_schema")
+            logging.info("for definition Schema need file_name or fields_for_schema")
 
         self.name_by_index = {field[1]: field[0] for field in self.fields}
         self.index_by_name = {field[0]: field[1] for field in self.fields}
@@ -215,32 +225,33 @@ class Schema:
 
 
 class Data:
-    def __init__(self, raf, logs_dir='', logs=[],
-                 names_of_fields_for_group=[]):
+    def __init__(self, raf,
+                 logs_dir='', logs_file='', logs_files=[], logs=[]):
 
         self.set_of_fields = raf.set_of_fields
 
-        if names_of_fields_for_group:
-            self.ind_of_fields_for_group = \
-                self.set_of_fields.get_indexes_by_names(names_of_fields_for_group)
-        else:
-            self.ind_of_fields_for_group = []
-
         # apply filter
-        if logs_dir:
+        if logs_file:
+            self.filtred_logs = raf.apply_filter_to_file(logs_file)
+        elif logs_files:
+            self.filtred_logs = raf.apply_filter_to_files(logs_files)
+        elif logs_dir:
             self.filtred_logs = raf.apply_filter_to_dir(logs_dir)
         elif logs:
             self.filtred_logs = raf.apply_all(logs)
-
-    def recreate_groups(self, func, names_of_fields_for_group=[], params=[]):
-        if names_of_fields_for_group:
-            self.ind_of_fields_for_group = self.set_of_fields.get_indexes_by_names(names_of_fields_for_group)
         else:
-            self.ind_of_fields_for_group = []
-        return self.create_groups(func, params)
+            logging.error("Provide logs to create Data: as dir, as file, as files or as list")
 
 
-# ToDo: вынести за пределы класса
+# @params: func_values_a, func_values_b - dicts - key: func_value
+# @params: func_for_compare define on value of  func_values_a and func_values_b
+# @return: res -- boolean, true if func_values_a == func_values_b
+# @return: diff_a_b_values -- dict - contains difference of values by
+# common keys in func_values_a and func_values_b
+# @return: no_keys_in_a -- dict -- contains key and value
+# if func_values_b contains key but func_values_a does not contain
+# @return:  no_keys_in_b -- dict -- 
+# eq_a_b_values
 def func_values_compare(func_values_a, func_values_b,
                         descr_a='a', descr_b='b',
                         func_for_compare='', dump_all=False, prefix=''):
@@ -248,7 +259,7 @@ def func_values_compare(func_values_a, func_values_b,
         func_for_compare = lambda a, b=0: a - b
 
     if not func_values_a or not func_values_b:
-        print("ERROR: Can not compare with empty func_values_a")
+        logging.error("Can not compare with empty func_values dict")
         return
 
     no_keys_in_b, diff_a_b_values, eq_a_b_values = compare_dicts(func_values_a,
@@ -260,7 +271,7 @@ def func_values_compare(func_values_a, func_values_b,
                                                                  func_for_compare)
 
     if len(diff_a_b_values) != len(diff_b_a_values):
-        print("something is broken")
+        logging.debug("something is broken")
         res = False
 
     elif not (no_keys_in_b or no_keys_in_a or diff_a_b_values):
@@ -278,8 +289,8 @@ def func_values_compare(func_values_a, func_values_b,
 
 
 def main():
-    print("HI! It is aggregator to analysis your logs")
-    print("Define functions in ")
+    logging.info("HI! It is aggregator to analysis your logs")
+    logging.info("Define functions in ")
 
 if __name__ == "__main__":
     main()

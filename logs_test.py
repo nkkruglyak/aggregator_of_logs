@@ -139,29 +139,26 @@ class TestFixture:
         logs=logs_1,
         raf=ReaderAndFilter(
             fields_for_schema=schema,
-        ),
-        names_of_fields_for_group=["first_field", "second_field"]
+        )
     )
 
     data_2 = Data(
         logs=logs_1,
         raf=ReaderAndFilter(
             fields_for_schema=schema,
-        ),
-        names_of_fields_for_group=["third_field", "fourth_field"]
+        )
     )
 
     data_3 = Data(
         logs=logs_1,
         raf=ReaderAndFilter(
             fields_for_schema=schema,
-        ),
-        names_of_fields_for_group=["second_field"]
+        )
     )
 
-    grouped_data_1 = GroupedData(data=data_1)
-    grouped_data_2 = GroupedData(data=data_2)
-    grouped_data_3 = GroupedData(data=data_3)
+    grouped_data_1 = GroupedData(data=data_1, fields_for_group=["first_field", "second_field"])
+    grouped_data_2 = GroupedData(data=data_2, fields_for_group=["third_field", "fourth_field"])
+    grouped_data_3 = GroupedData(data=data_3, fields_for_group=["second_field"])
 
     grouped_data_1.apply_func(count_in_group)
     grouped_data_2.apply_func(count_in_group)
@@ -515,11 +512,12 @@ class TestAllLogicOnMyTimesheet(unittest.TestCase):
 
         data = Data(
             logs_dir="logs/timesheet/nkruglyak",
-            raf=self.reader_and_filter,
-            names_of_fields_for_group=["number_of_ticket"]
+            raf=self.reader_and_filter
         )
 
-        grouped_data_1 = GroupedData(data=data, func=count_in_group)
+        grouped_data_1 = GroupedData(data=data,
+                                     fields_for_group=["number_of_ticket"],
+                                     func=count_in_group)
         n = len(grouped_data_1.groups.keys())
         self.assertEqual(n, 32)
 
@@ -529,7 +527,6 @@ class TestAllLogicOnMyTimesheet(unittest.TestCase):
         data = Data(
             logs_dir="logs/timesheet/nkruglyak",
             raf=self.reader_and_filter,
-            names_of_fields_for_group=["number_of_ticket"]
         )
 
         # максимальное время потраченное на задачу в октябре
@@ -539,6 +536,7 @@ class TestAllLogicOnMyTimesheet(unittest.TestCase):
         # переписать как функцию от параметров
         grouped_data = GroupedData(
             data=data,
+            fields_for_group=["number_of_ticket"],
             func=sum_of_time,
             params=[end_time_ind, start_time_ind]
         )

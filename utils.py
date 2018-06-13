@@ -1,5 +1,11 @@
 from datetime import datetime
+import logging
 
+
+logging.basicConfig(
+    format=u'%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
+    level=logging.DEBUG
+)
 
 # param: dict, dict, fundtion
 # return:dict, dict, dict
@@ -23,15 +29,15 @@ def compare_dicts(a, b, func_for_compare):
 
 def print_description(res, diff_a_b_values, no_keys_in_a, no_keys_in_b, eq_a_b_values, descr_a, descr_b, dump_all=False,
                       prefix=''):
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+    logging.info(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
-    print("{}_eq_{}".format(descr_a, descr_b), res)
-    print("{}_diff_{}".format(descr_a, descr_b), sum_values(diff_a_b_values))
-    print("no_in_{}".format(descr_a), sum_values(no_keys_in_a))
-    print("no_in_{}".format(descr_b), sum_values(no_keys_in_b))
-    print("eq_{}_{}".format(descr_a, descr_b), sum_values(eq_a_b_values))
+    logging.info("{}_eq_{} {}".format(descr_a, descr_b, res))
+    logging.info("{}_diff_{} {}".format(descr_a, descr_b, sum_values(diff_a_b_values)))
+    logging.info("no_in_{} {}".format(descr_a, sum_values(no_keys_in_a)))
+    logging.info("no_in_{} {}".format(descr_b, sum_values(no_keys_in_b)))
+    logging.info("eq_{}_{} {}".format(descr_a, descr_b, sum_values(eq_a_b_values)))
 
-    print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+    logging.info("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
     if dump_all:
         dump_dict_to_file(diff_a_b_values, prefix + "{}_diff_{}.txt".format(descr_a, descr_b))
         dump_dict_to_file(no_keys_in_a, prefix + "in_{}_and_no_in_{}.txt".format(descr_b, descr_a))
@@ -47,8 +53,6 @@ def dump_dict_to_file(d, file_name, sort_by_value=False):
         list_for_dump = list(d.items())
     with open(common + file_name, 'w') as f:
         for key, value in list_for_dump:
-            # print("key in compare_ordered_dicts (expect see tuple)",  key)
-            # print(key)
             f.write('by keys: {} see value {} \n'.format(
                 '....'.join(key), value
                 )
